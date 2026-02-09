@@ -6,7 +6,7 @@ services:
     volumes:
       - ./api:/var/www/html
     environment:
-      - DATABASE_URL=postgresql://app:main@db:5432/app?serverVersion=16&charset=utf8
+      - DATABASE_URL=postgresql://app:app@db:5432/app?serverVersion=16&charset=utf8
 
   nginx:
     image: nginx:stable-alpine

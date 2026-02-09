@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use App\Entity\CardGameResult;
 use App\Enum\CardValue;
 use App\Enum\Suit;
 use App\Model\Card;
@@ -8,7 +9,8 @@ use App\Service\CardSorter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
+use Doctrine\ORM\EntityManagerInterface;
 
 #[Route('/api/card-game', name: 'api_card_game_')]
 class CardGameController extends AbstractController
@@ -18,7 +20,7 @@ class CardGameController extends AbstractController
     ) {}
 
     #[Route('/play', name: 'play', methods: ['POST'])]
-    public function play(Request $request): JsonResponse
+    public function play(Request $request, EntityManagerInterface $em): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $numberOfCards = $data['count'] ?? 10;
@@ -44,7 +46,17 @@ class CardGameController extends AbstractController
         $sortedHandObjects = $this->cardSorter->sort($hand, $suitOrder, $valueOrder);
         $sortedHand = array_map(fn($c) => $c->toString(), $sortedHandObjects);
 
+        $result = new CardGameResult();
+        $result->setSuiteOrder($suitOrder);
+        $result->setValueOrder($valueOrder);
+        $result->setHand($sortedHand);
+        $result->setCreatedAt(new \DateTimeImmutable());
+
+        $em->persist($result);
+        $em->flush();
+
         return $this->json([
+            'id' => $result->getId(),
             'rules' => [
                 'suits' => $suitOrder,
                 'values' => $valueOrder
